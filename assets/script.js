@@ -21,53 +21,69 @@ function getWeatherData(cityName, apiKey, callback) {
         })
         .then(callback)
 }
+
 function displayWeatherData(data, cityName) {
     if (!data || !data.list) {
+        // returns an error if city input is invalid
         console.error("Invalid weather data");
         return;
     }
-
-   
-
-    // Clear previous data
+    // clear previous data
     document.getElementById("currentWeather").innerHTML = '';
     document.getElementById("forecastWeather").innerHTML = '';
-
-    // Displays as the first element being the current weather
+    // displays as the first element being the current weather
     var currentWeather = data.list[0]; 
     document.getElementById("currentWeather").innerHTML = 
-        "<h2>Current Weather in " + cityName + "</h2>" +
+        "<div class='weather-container'>" +
+        "<h3>Current Weather in " + cityName + "</h3>" +
         "<p>Date: " + new Date(currentWeather.dt * 1000).toLocaleDateString() + "</p>" +
         "<p>Temperature: " + currentWeather.main.temp + "°K</p>" +
         "<p>Wind Speed: " + currentWeather.wind.speed + " m/s</p>" +
         "<p>Humidity: " + currentWeather.main.humidity + "%</p>" +
-        "<img src='http://openweathermap.org/img/wn/" + currentWeather.weather[0].icon + ".png' alt='Weather icon'>";
+        "<img src='http://openweathermap.org/img/wn/" + currentWeather.weather[0].icon + ".png' alt='Weather icon'>" +
+        "</div>";
 
-    // Displays 5-day forecast, skipping every 8 to get daily data (3 hour forecast)
-    var forecastHTML = "<h2>5-Day Forecast</h2>";
+    // displays 5-day forecast, skipping every 8 to get daily data (3 hour forecast)
+    var forecastHTML = "<h4>5-Day Forecast</h4>";
     for (var i = 0; i < data.list.length; i += 8) {
         var dayData = data.list[i];
         forecastHTML += 
-            "<div>" +
-            "<p>Date: " + new Date(dayData.dt * 1000).toLocaleDateString() + "</p>" +
-            "<p>Temperature: " + kelvinToFahrenheit(dayData.main.temp) + "°F</p>" +
-            "<p>Wind Speed: " + dayData.wind.speed + " m/s</p>" +
-            "<p>Humidity: " + dayData.main.humidity + "%</p>" +
+            "<div class='forecast-container'>" +
+            "<p class='forecast-item'>Date: " + new Date(dayData.dt * 1000).toLocaleDateString() + "</p>" +
+            "<p class='forecast-item'>Temperature: " + dayData.main.temp + "°K</p>" +
+            "<p class='forecast-item'>Wind Speed: " + dayData.wind.speed + " m/s</p>" +
+            "<p class='forecast-item'>Humidity: " + dayData.main.humidity + "%</p>" +
             "<img src='http://openweathermap.org/img/wn/" + dayData.weather[0].icon + ".png' alt='Weather icon'>" +
             "</div>";
     }
     document.getElementById("forecastWeather").innerHTML = forecastHTML;
 }
-
-
-function saveToHistory() {
-    
+// saves searches into local storage
+function saveToHistory(cityName) {
+    var history = JSON.parse(localStorage.getItem('weatherSearchHistory')) || [];
+    if (!history.includes(cityName)) {
+        history.push(cityName);
+        localStorage.setItem('weatherSearchHistory', JSON.stringify(history));
+    }
 }
 
 function updateHistoryUI() {
- 
+    var history = JSON.parse(localStorage.getItem('weatherSearchHistory')) || [];
+    var historyHTML = "<h5>Search History</h5>";
+    // creates onclick buttons for each search
+    for (let i = 0; i < history.length; i++) {
+        // backslashes needed here to separate the quotes to be added to the string as they are inside quotes already
+        historyHTML += '<button type="button" onclick="searchAgain(\'' + history[i] + '\')">' + history[i] + '</button>';
+    }
+
+    document.getElementById("searchHistory").innerHTML = historyHTML;
 }
 
+function searchAgain(cityName) {
+    document.getElementById("cityInput").value = cityName;
+    // triggers the submit event of the form as if the user had clicked a submit button [dispatchEvent]
+    document.getElementById("searchForm").dispatchEvent(new Event("submit"));
+}
 
-
-
+// search history persists on page load
+updateHistoryUI();
